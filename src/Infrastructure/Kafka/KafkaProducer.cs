@@ -25,6 +25,7 @@ namespace Infrastructure.Kafka
             try
             {
                 // Serialize the generic value to JSON
+                Console.WriteLine($"Message sent to value: {value}");
                 var serializedValue = JsonSerializer.Serialize(value);
 
                 var result = await _producer.ProduceAsync(topic, new Message<string, string> { Key = key, Value = serializedValue });

@@ -28,6 +28,9 @@ namespace Application.Commands
                 Name = request.Name
             };
 
+            // Save the entity using the repository
+            // await _repository.AddAsync(entity);
+
             // Produce a message to Kafka
             await _kafkaProducer.ProduceAsync("entity-topic", entity.Id.ToString(), entity);
 

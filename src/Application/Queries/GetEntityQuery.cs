@@ -1,3 +1,4 @@
+using Application.Interfaces;
 using Domain.Entities;
 using MediatR;
 
@@ -10,16 +11,17 @@ namespace Application.Queries
 
     public class GetEntityQueryHandler : IRequestHandler<GetEntityQuery, Entity>
     {
-        public Task<Entity> Handle(GetEntityQuery request, CancellationToken cancellationToken)
-        {
-            // Replace with your actual logic to retrieve the entity
-            var entity = new Entity
-            {
-                Id = request.Id,
-                Name = "Sample Entity"
-            };
+        private readonly IEntityRepository _repository;
 
-            return Task.FromResult(entity);
+        public GetEntityQueryHandler(IEntityRepository repository)
+        {
+            _repository = repository;
+        }
+
+        public async Task<Entity> Handle(GetEntityQuery request, CancellationToken cancellationToken)
+        {
+            // Retrieve the entity using the repository
+            return await _repository.GetByIdAsync(request.Id);
         }
     }
 }

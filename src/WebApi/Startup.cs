@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using Application.Commands;
 using MediatR;
 using Application.Queries;
+using Microsoft.EntityFrameworkCore;
 
 namespace WebApi
 {
@@ -32,8 +33,11 @@ namespace WebApi
             var bootstrapServers = "localhost:9092"; // Replace with your Kafka server address
             services.AddScoped<IKafkaProducer>(provider => new KafkaProducer(bootstrapServers));
 
-            services.AddDbContext<AppDbContext>();
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase("InMemoryDb"));
+
             // Add other services and configurations as needed
+            services.AddScoped<IEntityRepository, EntityRepository>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -59,10 +63,14 @@ namespace WebApi
             });
 
             // Start Kafka Consumer
-            var kafkaConsumer = new KafkaConsumer("entity-topic", "localhost:9092");
-            var cancellationTokenSource = new CancellationTokenSource();
-            Task.Run(() => kafkaConsumer.StartConsuming(cancellationTokenSource.Token));
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                var serviceProvider = scope.ServiceProvider;
 
+                var kafkaConsumer = new KafkaConsumer("entity-topic", "localhost:9092", serviceProvider);
+                var cancellationTokenSource = new CancellationTokenSource();
+                Task.Run(() => kafkaConsumer.StartConsuming(cancellationTokenSource.Token));
+            }
         }
     }
 }

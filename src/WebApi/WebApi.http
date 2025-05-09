@@ -1,7 +1,7 @@
 @WebApi_HostAddress = http://localhost:5266
 
 ### Create Entity
-POST {{WebApi_HostAddress}}/entity
+POST {{WebApi_HostAddress}}/api/entity
 Content-Type: application/json
 Accept: application/json
 
@@ -10,5 +10,5 @@ Accept: application/json
 }
 
 ### Get Entity by ID
-GET {{WebApi_HostAddress}}/entity/{id}
+GET {{WebApi_HostAddress}}/api/entity/e4ba3122-231c-4409-9494-869e30fd68ee
 Accept: application/json
