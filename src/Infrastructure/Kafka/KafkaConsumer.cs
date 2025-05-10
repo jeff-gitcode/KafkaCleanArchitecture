@@ -1,7 +1,11 @@
+using Application.Interfaces;
 using Confluent.Kafka;
+using Domain.Entities;
+using Infrastructure.Persistence;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Kafka
 {
@@ -9,10 +13,14 @@ namespace Infrastructure.Kafka
     {
         private readonly string _topic;
         private readonly ConsumerConfig _config;
+        // private readonly IServiceProvider _serviceProvider;
 
         public KafkaConsumer(string topic, string bootstrapServers)
         {
             _topic = topic;
+            // _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider)); ;
+
+
             _config = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
@@ -32,7 +40,7 @@ namespace Infrastructure.Kafka
                     while (!cancellationToken.IsCancellationRequested)
                     {
                         var cr = consumer.Consume(cancellationToken);
-                        ProcessMessage(cr.Message.Key, cr.Message.Value);
+                        await ProcessMessage(cr.Message.Key, cr.Message.Value);
                     }
                 }
                 catch (OperationCanceledException)
@@ -42,10 +50,37 @@ namespace Infrastructure.Kafka
             }
         }
 
-        private void ProcessMessage(string key, string value)
+        private async Task ProcessMessage(string key, string value)
         {
-            // Implement message processing logic here
             Console.WriteLine($"Consumed message with key: {key}, value: {value}");
+
+            try
+            {
+                if (Guid.TryParse(key, out var entityId))
+                {
+                    // Deserialize the value into an Entity object
+                    var entity = System.Text.Json.JsonSerializer.Deserialize<Entity>(value);
+
+                    if (entity != null)
+                    {
+                        entity.Id = entityId; // Ensure the ID from the key is set
+                                              // await repository.AddAsync(entity);
+                        Console.WriteLine($"Entity with ID {entity.Id} and Name '{entity.Name}' saved to the database.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to deserialize message value: {value}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Invalid entity ID: {key}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing message: {ex.Message}");
+            }
         }
     }
 }

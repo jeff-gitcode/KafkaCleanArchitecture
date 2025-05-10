@@ -34,6 +34,8 @@ namespace WebApi
 
             services.AddDbContext<AppDbContext>();
             // Add other services and configurations as needed
+            // Add other services and configurations as needed
+            services.AddScoped<IEntityRepository, EntityRepository>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
