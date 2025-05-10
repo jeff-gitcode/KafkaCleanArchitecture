@@ -68,7 +68,7 @@ namespace Infrastructure.Kafka
                         if (entity != null)
                         {
                             entity.Id = entityId; // Ensure the ID from the key is set
-                            await repository.AddAsync(entity);
+                            // await repository.AddAsync(entity);
                             Console.WriteLine($"Entity with ID {entity.Id} and Name '{entity.Name}' saved to the database.");
                         }
                         else
