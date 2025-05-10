@@ -30,11 +30,11 @@ namespace Infrastructure.Kafka
         {
             // Set the timer to trigger every 10 seconds
             // Set the timer to trigger every 10 seconds
-            _timer = new Timer(async state => await ConsumeMessagesAsync(state), null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
+            _timer = new Timer(async state => await ConsumeMessagesAsync(cancellationToken), null, TimeSpan.Zero, Timeout.InfiniteTimeSpan);
             return Task.CompletedTask;
         }
 
-        private async Task ConsumeMessagesAsync(object state)
+        private async Task ConsumeMessagesAsync(CancellationToken cancellationToken)
         {
             using (var consumer = new ConsumerBuilder<string, string>(_config).Build())
             {
@@ -46,35 +46,38 @@ namespace Infrastructure.Kafka
 
                     try
                     {
-                        var cr = consumer.Consume(TimeSpan.FromSeconds(5)); // Poll for messages
-                        if (cr != null)
+                        while (!cancellationToken.IsCancellationRequested)  // Run indefinitely
                         {
-                            Console.WriteLine($"Consumed message with key: {cr.Message.Key}, value: {cr.Message.Value}");
-
-                            if (Guid.TryParse(cr.Message.Key, out var entityId))
+                            var cr = consumer.Consume(cancellationToken); // Poll for messages
+                            if (cr != null)
                             {
-                                // Deserialize the message value into an Entity object
-                                var entity = System.Text.Json.JsonSerializer.Deserialize<Domain.Entities.Entity>(cr.Message.Value);
-                                if (entity != null)
+                                Console.WriteLine($"Consumed message with key: {cr.Message.Key}, value: {cr.Message.Value}");
+
+                                if (Guid.TryParse(cr.Message.Key, out var entityId))
                                 {
-                                    entity.Id = entityId; // Ensure the ID from the key is set
-                                    await repository.AddAsync(entity); // Save to the database asynchronously
-                                    Console.WriteLine($"Entity with ID {entity.Id} and Name '{entity.Name}' saved to the database.");
+                                    // Deserialize the message value into an Entity object
+                                    var entity = System.Text.Json.JsonSerializer.Deserialize<Domain.Entities.Entity>(cr.Message.Value);
+                                    if (entity != null)
+                                    {
+                                        entity.Id = entityId; // Ensure the ID from the key is set
+                                        await repository.AddAsync(entity); // Save to the database asynchronously
+                                        Console.WriteLine($"Entity with ID {entity.Id} and Name '{entity.Name}' saved to the database.");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"Failed to deserialize message value: {cr.Message.Value}");
+                                    }
                                 }
                                 else
                                 {
-                                    Console.WriteLine($"Failed to deserialize message value: {cr.Message.Value}");
+                                    Console.WriteLine($"Invalid entity ID: {cr.Message.Key}");
                                 }
                             }
-                            else
-                            {
-                                Console.WriteLine($"Invalid entity ID: {cr.Message.Key}");
-                            }
                         }
-                        else
-                        {
-                            Console.WriteLine("No messages consumed.");
-                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Console.WriteLine("Message consumption canceled.");
                     }
                     catch (Exception ex)
                     {
@@ -83,6 +86,7 @@ namespace Infrastructure.Kafka
                 }
             }
         }
+
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _timer?.Change(Timeout.Infinite, 0);
