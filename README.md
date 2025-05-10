@@ -35,11 +35,18 @@ sequenceDiagram
     participant Database as Database (Optional)
     participant Certificates as SSL Certificates
 
-    User->>WebAPI: Sends HTTP Request
-    WebAPI->>KafkaBroker: Produces Message
-    KafkaBroker->>KafkaConsumer: Delivers Message
-    KafkaConsumer->>Domain: Processes Message
+    User->>WebAPI: Sends HTTP Request (Command)
+    WebAPI->>KafkaBroker: Produces Message (Command)
+    KafkaBroker->>KafkaConsumer: Delivers Message (Command)
+    KafkaConsumer->>Domain: Processes Message (Command)
     Domain->>Database: Saves Data (Optional)
+
+    User->>WebAPI: Sends HTTP Request (Query)
+    WebAPI->>Domain: Fetches Data (Query)
+    Domain->>Database: Retrieves Data (Query)
+    Database->>Domain: Returns Data (Query)
+    Domain->>WebAPI: Returns Data (Query)
+
     Certificates-->>WebAPI: Secures Communication
     Certificates-->>KafkaBroker: Secures Communication
     Certificates-->>KafkaConsumer: Secures Communication
@@ -67,6 +74,7 @@ sequenceDiagram
 mkdir kafka-secrets
 # Generate a Private Key Run the following command to generate a private key:
 openssl genrsa -out kafka-secrets/kafka.key 2048
+
 # Generate a CSR using the private key:
 openssl req -new -key kafka-secrets/kafka.key -out kafka-secrets/kafka.csr -subj "//CN=localhost"
 
@@ -75,8 +83,10 @@ openssl x509 -req -in kafka-secrets/kafka.csr -signkey kafka-secrets/kafka.key -
 
 # Convert the private key and certificate into a PKCS#12 keystore:
 openssl pkcs12 -export -in kafka-secrets/kafka.crt -inkey kafka-secrets/kafka.key -out kafka-secrets/kafka.keystore.p12 -name kafka -password pass:kafka123
+
 # Import the PKCS#12 Keystore into a Java Keystore
 keytool -importkeystore -deststorepass kafka123 -destkeypass kafka123 -destkeystore kafka-secrets/kafka.keystore.jks -srckeystore kafka-secrets/kafka.keystore.p12 -srcstoretype PKCS12 -srcstorepass kafka123 -alias kafka
+
 # Create a Truststore
 keytool -import -trustcacerts -file kafka-secrets/kafka.crt -alias kafka -keystore kafka-secrets/kafka.truststore.jks -storepass kafka123 -noprompt
 
