@@ -1,91 +1,84 @@
-using Application.Interfaces;
 using Confluent.Kafka;
-using Domain.Entities;
-using Infrastructure.Persistence;
+using Application.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Kafka
 {
-    public class KafkaConsumer
+    public class KafkaConsumerService : IHostedService, IDisposable
     {
-        private readonly string _topic;
-        private readonly ConsumerConfig _config;
         private readonly IServiceProvider _serviceProvider;
+        private readonly string _topic = "entity-topic";
+        private readonly ConsumerConfig _config;
+        private Timer _timer;
 
-        public KafkaConsumer(string topic, string bootstrapServers, IServiceProvider serviceProvider)
+        public KafkaConsumerService(IServiceProvider serviceProvider)
         {
-            _topic = topic;
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider)); ;
-
-
+            _serviceProvider = serviceProvider;
             _config = new ConsumerConfig
             {
-                BootstrapServers = bootstrapServers,
+                BootstrapServers = "localhost:9092", // Replace with your Kafka server address
                 GroupId = "consumer-group",
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
         }
 
-        public async Task StartConsuming(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            // Set the timer to trigger every 10 seconds
+            _timer = new Timer(ConsumeMessages, null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
+            return Task.CompletedTask;
+        }
+
+        private void ConsumeMessages(object state)
         {
             using (var consumer = new ConsumerBuilder<string, string>(_config).Build())
             {
                 consumer.Subscribe(_topic);
 
-                try
+                using (var scope = _serviceProvider.CreateScope())
                 {
-                    while (!cancellationToken.IsCancellationRequested)
+                    var repository = scope.ServiceProvider.GetRequiredService<IEntityRepository>();
+
+                    try
                     {
-                        var cr = consumer.Consume(cancellationToken);
-                        await ProcessMessage(cr.Message.Key, cr.Message.Value);
+                        var cr = consumer.Consume(TimeSpan.FromSeconds(5)); // Poll for messages
+                        if (cr != null)
+                        {
+                            Console.WriteLine($"Consumed message with key: {cr.Message.Key}, value: {cr.Message.Value}");
+
+                            if (Guid.TryParse(cr.Message.Key, out var entityId))
+                            {
+                                var entity = System.Text.Json.JsonSerializer.Deserialize<Domain.Entities.Entity>(cr.Message.Value);
+                                if (entity != null)
+                                {
+                                    entity.Id = entityId;
+                                    repository.AddAsync(entity).Wait();
+                                    Console.WriteLine($"Entity with ID {entity.Id} and Name '{entity.Name}' saved to the database.");
+                                }
+                            }
+                        }
                     }
-                }
-                catch (OperationCanceledException)
-                {
-                    consumer.Close();
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error consuming message: {ex.Message}");
+                    }
                 }
             }
         }
 
-        private async Task ProcessMessage(string key, string value)
+        public Task StopAsync(CancellationToken cancellationToken)
         {
-            Console.WriteLine($"Consumed message with key: {key}, value: {value}");
+            _timer?.Change(Timeout.Infinite, 0);
+            return Task.CompletedTask;
+        }
 
-            using (var scope = _serviceProvider.CreateScope())
-            {
-                var repository = scope.ServiceProvider.GetRequiredService<IEntityRepository>();
-
-                try
-                {
-                    if (Guid.TryParse(key, out var entityId))
-                    {
-                        // Deserialize the value into an Entity object
-                        var entity = System.Text.Json.JsonSerializer.Deserialize<Entity>(value);
-
-                        if (entity != null)
-                        {
-                            entity.Id = entityId; // Ensure the ID from the key is set
-                            // await repository.AddAsync(entity);
-                            Console.WriteLine($"Entity with ID {entity.Id} and Name '{entity.Name}' saved to the database.");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Failed to deserialize message value: {value}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Invalid entity ID: {key}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing message: {ex.Message}");
-                }
-            }
+        public void Dispose()
+        {
+            _timer?.Dispose();
         }
     }
 }

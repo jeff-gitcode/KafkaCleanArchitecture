@@ -10,5 +10,5 @@ Accept: application/json
 }
 
 ### Get Entity by ID
-GET {{WebApi_HostAddress}}/api/entity/e4ba3122-231c-4409-9494-869e30fd68ee
+GET {{WebApi_HostAddress}}/api/entity/e7acc331-baa5-43cd-9dc2-7260d3502686
 Accept: application/json

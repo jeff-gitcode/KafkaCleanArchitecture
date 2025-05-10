@@ -38,6 +38,9 @@ namespace WebApi
 
             // Add other services and configurations as needed
             services.AddScoped<IEntityRepository, EntityRepository>();
+
+            // Register the Kafka consumer as a hosted service
+            services.AddHostedService<KafkaConsumerService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -63,14 +66,14 @@ namespace WebApi
             });
 
             // Start Kafka Consumer
-            using (var scope = app.ApplicationServices.CreateScope())
-            {
-                var serviceProvider = scope.ServiceProvider;
+            // using (var scope = app.ApplicationServices.CreateScope())
+            // {
+            //     var serviceProvider = scope.ServiceProvider;
 
-                var kafkaConsumer = new KafkaConsumer("entity-topic", "localhost:9092", serviceProvider);
-                var cancellationTokenSource = new CancellationTokenSource();
-                Task.Run(() => kafkaConsumer.StartConsuming(cancellationTokenSource.Token));
-            }
+            //     var kafkaConsumer = new KafkaConsumer("entity-topic", "localhost:9092", serviceProvider);
+            //     var cancellationTokenSource = new CancellationTokenSource();
+            //     Task.Run(() => kafkaConsumer.StartConsuming(cancellationTokenSource.Token));
+            // }
         }
     }
 }
