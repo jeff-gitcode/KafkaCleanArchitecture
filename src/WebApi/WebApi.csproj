@@ -14,6 +14,9 @@
  <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.4" />  </ItemGroup>
 
   <ItemGroup>
+  <Content Include="kafka-secrets\**\*">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
     <ProjectReference Include="..\Application\Application.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>

@@ -18,11 +18,24 @@ namespace Infrastructure.Kafka
         public KafkaConsumerService(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+
+            var projectRoot = Directory.GetParent(Directory.GetCurrentDirectory())?.Parent?.FullName;
+
+            Console.WriteLine($"Project root directory: {projectRoot}");
+
             _config = new ConsumerConfig
             {
-                BootstrapServers = "localhost:9092", // Replace with your Kafka server address
+                // BootstrapServers = "localhost:9092", // Replace with your Kafka server address
+                // GroupId = "consumer-group",
+                // AutoOffsetReset = AutoOffsetReset.Earliest
+                BootstrapServers = "localhost:9093",
                 GroupId = "consumer-group",
-                AutoOffsetReset = AutoOffsetReset.Earliest
+                AutoOffsetReset = AutoOffsetReset.Earliest,
+                SecurityProtocol = SecurityProtocol.Ssl,
+                SslCaLocation = projectRoot + "/kafka-secrets/kafka.crt",
+                SslCertificateLocation = projectRoot + "/kafka-secrets/kafka.crt", // Path to the client certificate in PEM format
+                SslKeyLocation = projectRoot + "/kafka-secrets/kafka.key", // Path to the private key in PEM format
+                SslKeyPassword = "kafka123"
             };
         }
 

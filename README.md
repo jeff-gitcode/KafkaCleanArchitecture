@@ -38,6 +38,16 @@ This project is a .NET Core application that implements a clean architecture pat
 
 3. Update the configuration for Kafka in the `appsettings.json` file.
 
+4. **Prepare Kafka with SSL**:
+   - Ensure Docker is installed on your system.
+   - Generate SSL certificates for Kafka:
+```bash
+mkdir kafka-secrets
+openssl req -new -x509 -keyout kafka-secrets/kafka.key -out kafka-secrets/kafka.crt -days 365 -nodes -subj "//CN=localhost"
+openssl pkcs12 -export -in kafka-secrets/kafka.crt -inkey kafka-secrets/kafka.key -out kafka-secrets/kafka.keystore.p12 -name kafka -password pass:kafka123
+keytool -import -trustcacerts -file kafka-secrets/kafka.crt -alias kafka -keystore kafka-secrets/kafka.truststore.jks -storepass kafka123 -noprompt
+```
+
 4. Start Kafka using Docker Compose: Ensure you have Docker installed, then run:
     ```
     {
