@@ -2,27 +2,6 @@
 
 This project is a .NET Core application that implements a clean architecture pattern with a focus on CQRS (Command Query Responsibility Segregation) and integrates with Kafka for messaging.
 
-## Project Structure
-
-- **src**: Contains the main application code.
-  - **Application**: Contains commands, queries, and interfaces.
-    - **Commands**: Command implementations for modifying state.
-    - **Queries**: Query implementations for retrieving data.
-    - **Interfaces**: Interfaces for application services.
-  - **Domain**: Contains the core domain entities and events.
-    - **Entities**: Domain entities representing the business model.
-    - **Events**: Domain events that signify changes in state.
-  - **Infrastructure**: Contains implementations for external services.
-    - **Kafka**: Kafka producer and consumer implementations.
-    - **Persistence**: Database context for Entity Framework Core.
-  - **WebApi**: Contains the Web API layer.
-    - **Controllers**: API controllers for handling HTTP requests.
-
-- **tests**: Contains unit tests for the application.
-  - **Application.Tests**: Tests for application commands and queries.
-  - **Domain.Tests**: Tests for domain entities.
-  - **Infrastructure.Tests**: Tests for infrastructure components.
-
 ## System Architecture
 
 ```mermaid
@@ -51,6 +30,27 @@ sequenceDiagram
     Certificates-->>KafkaBroker: Secures Communication
     Certificates-->>KafkaConsumer: Secures Communication
 ```
+
+## Project Structure
+
+- **src**: Contains the main application code.
+  - **Application**: Contains commands, queries, and interfaces.
+    - **Commands**: Command implementations for modifying state.
+    - **Queries**: Query implementations for retrieving data.
+    - **Interfaces**: Interfaces for application services.
+  - **Domain**: Contains the core domain entities and events.
+    - **Entities**: Domain entities representing the business model.
+    - **Events**: Domain events that signify changes in state.
+  - **Infrastructure**: Contains implementations for external services.
+    - **Kafka**: Kafka producer and consumer implementations.
+    - **Persistence**: Database context for Entity Framework Core.
+  - **WebApi**: Contains the Web API layer.
+    - **Controllers**: API controllers for handling HTTP requests.
+
+- **tests**: Contains unit tests for the application.
+  - **Application.Tests**: Tests for application commands and queries.
+  - **Domain.Tests**: Tests for domain entities.
+  - **Infrastructure.Tests**: Tests for infrastructure components.
 
 ## Setup Instructions
 
