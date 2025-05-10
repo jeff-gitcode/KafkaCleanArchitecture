@@ -6,6 +6,9 @@ using Application.Commands;
 using MediatR;
 using Application.Queries;
 using Microsoft.EntityFrameworkCore;
+using Domain;
+using Application;
+using Infrastructure;
 
 namespace WebApi
 {
@@ -16,8 +19,18 @@ namespace WebApi
             services.AddControllers();
 
             // Register MediatR
-            services.AddMediatR(typeof(CreateEntityCommand).Assembly);
-            services.AddMediatR(typeof(GetEntityQuery).Assembly);
+            // services.AddMediatR(typeof(CreateEntityCommand).Assembly);
+            // services.AddMediatR(typeof(GetEntityQuery).Assembly);
+            // Add Domain Layer Services (if any)
+            services.AddDomainServices();
+
+            // Add Application Layer Services
+            services.AddApplicationServices();
+
+            // Add Infrastructure Layer Services
+            var connectionString = "InMemoryDb"; // Replace with your actual connection string if needed
+            var kafkaBootstrapServers = "localhost:9092"; // Replace with your Kafka server address
+            services.AddInfrastructureServices(connectionString, kafkaBootstrapServers);
 
             // Add Swagger
             services.AddSwaggerGen(c =>
@@ -29,18 +42,19 @@ namespace WebApi
                 });
             });
 
-            // Provide the bootstrapServers value for KafkaProducer
-            var bootstrapServers = "localhost:9092"; // Replace with your Kafka server address
-            services.AddScoped<IKafkaProducer>(provider => new KafkaProducer(bootstrapServers));
+            // // Provide the bootstrapServers value for KafkaProducer
+            // var bootstrapServers = "localhost:9092"; // Replace with your Kafka server address
+            // services.AddScoped<IKafkaProducer>(provider => new KafkaProducer(bootstrapServers));
 
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseInMemoryDatabase("InMemoryDb"));
+            // services.AddDbContext<AppDbContext>(options =>
+            //     options.UseInMemoryDatabase("InMemoryDb"));
 
-            // Add other services and configurations as needed
-            services.AddScoped<IEntityRepository, EntityRepository>();
+            // // Add other services and configurations as needed
+            // services.AddScoped<IEntityRepository, EntityRepository>();
 
-            // Register the Kafka consumer as a hosted service
-            services.AddHostedService<KafkaConsumerService>();
+            // // Register the Kafka consumer as a hosted service
+            // services.AddHostedService<KafkaConsumerService>();
+
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
