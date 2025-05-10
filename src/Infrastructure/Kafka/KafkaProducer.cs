@@ -19,7 +19,7 @@ namespace Infrastructure.Kafka
             var config = new ProducerConfig
             {
                 // BootstrapServers = bootstrapServers,
-                BootstrapServers = "localhost:9093",
+                BootstrapServers = bootstrapServers,
                 SecurityProtocol = SecurityProtocol.Ssl,
                 SslCaLocation = projectRoot + "/kafka-secrets/kafka.crt",
                 SslCertificateLocation = projectRoot + "/kafka-secrets/kafka.crt", // Path to the client certificate in PEM format

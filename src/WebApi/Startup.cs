@@ -29,7 +29,7 @@ namespace WebApi
 
             // Add Infrastructure Layer Services
             var connectionString = "InMemoryDb"; // Replace with your actual connection string if needed
-            var kafkaBootstrapServers = "localhost:9092"; // Replace with your Kafka server address
+            var kafkaBootstrapServers = "localhost:9093";  //"localhost:9092"; // Replace with your Kafka server address
             services.AddInfrastructureServices(connectionString, kafkaBootstrapServers);
 
             // Add Swagger

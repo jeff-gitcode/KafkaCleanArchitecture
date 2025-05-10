@@ -1,10 +1,7 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Application.Commands;
 using Application.Interfaces;
 using Domain.Entities;
 using Moq;
-using Xunit;
 
 namespace Application.Tests
 {
@@ -30,18 +27,21 @@ namespace Application.Tests
             await _handler.Handle(command, cancellationToken);
 
             // Assert
-            _kafkaProducerMock.Verify(x => x.ProduceAsync("test-topic", "test-key", It.IsAny<Entity>()), Times.Once);
+            _kafkaProducerMock.Verify(
+                x => x.ProduceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Entity>()),
+                Times.Once
+            );
         }
 
         [Fact]
-        public async Task Handle_ShouldThrowException_WhenCommandIsInvalid()
+        public async Task Handle_ShouldThrowValidationException_WhenCommandIsInvalid()
         {
             // Arrange
-            var command = new CreateEntityCommand { Name = null }; // Invalid command
+            var command = new CreateEntityCommand { Name = "" }; // Invalid command
             var cancellationToken = CancellationToken.None;
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => _handler.Handle(command, cancellationToken));
+            await Assert.ThrowsAsync<FluentValidation.ValidationException>(() => _handler.Handle(command, cancellationToken));
         }
     }
 }

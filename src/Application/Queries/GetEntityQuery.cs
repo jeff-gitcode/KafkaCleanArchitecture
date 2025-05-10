@@ -1,5 +1,6 @@
 using Application.Interfaces;
 using Domain.Entities;
+using FluentValidation;
 using MediatR;
 
 namespace Application.Queries
@@ -7,6 +8,16 @@ namespace Application.Queries
     public class GetEntityQuery : IRequest<Entity>
     {
         public Guid Id { get; set; }
+    }
+
+    public class GetEntityQueryValidator : AbstractValidator<GetEntityQuery>
+    {
+        public GetEntityQueryValidator()
+        {
+            RuleFor(x => x.Id)
+                .NotEmpty().WithMessage("Id is required.")
+                .NotEqual(Guid.Empty).WithMessage("Id must be a valid GUID.");
+        }
     }
 
     public class GetEntityQueryHandler : IRequestHandler<GetEntityQuery, Entity>

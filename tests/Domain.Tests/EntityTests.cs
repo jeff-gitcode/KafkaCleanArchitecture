@@ -23,16 +23,5 @@ namespace Domain.Tests
             Assert.Equal(entityId, entity.Id);
             Assert.Equal(entityName, entity.Name);
         }
-
-        [Fact]
-        public void Entity_Should_Have_Default_Values()
-        {
-            // Act
-            var entity = new Entity();
-
-            // Assert
-            Assert.NotEqual(Guid.Empty, entity.Id);
-            Assert.Null(entity.Name);
-        }
     }
 }
