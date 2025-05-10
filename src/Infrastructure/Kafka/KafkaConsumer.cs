@@ -67,14 +67,15 @@ public class KafkaConsumerService : IHostedService, IDisposable
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _timer?.Change(Timeout.InfiniteTimeSpan, TimeSpan.Zero);
+        _timer?.Dispose();
+        // _timer?.Change(Timeout.InfiniteTimeSpan, TimeSpan.Zero);
         // _timer?.Change(Timeout.Infinite, 0);
         return Task.CompletedTask;
     }
 
     public void Dispose()
     {
-        _timer?.Dispose();
+        // _timer?.Dispose();
         _consumer.Close();
         _consumer.Dispose();
     }

@@ -28,6 +28,7 @@ namespace WebApi.Controllers
         {
             var query = new GetEntityQuery { Id = id };
             var entity = await _mediator.Send(query);
+
             if (entity == null)
             {
                 return NotFound();

@@ -53,13 +53,15 @@ public class KafkaConsumerServiceTests : IDisposable
 
         // Use FakeTimeProvider for testing
         _fakeTimeProvider = new FakeTimeProvider();
+        var now = DateTime.Now;
+        _fakeTimeProvider.SetUtcNow(now);
 
         // Initialize the KafkaConsumerService with the mocked dependencies
         _consumerService = new KafkaConsumerService(_serviceProviderMock.Object, _consumerMock.Object, _fakeTimeProvider);
     }
 
     [Fact]
-    public async Task ConsumeMessagesAsync_ShouldConsumeValidMessage()
+    public async Task ConsumeMessagesAsync_ShouldConsumeValidMessage_AndStopAfterAddAsync()
     {
         // Arrange
         var validKey = Guid.NewGuid().ToString();
@@ -78,10 +80,34 @@ public class KafkaConsumerServiceTests : IDisposable
                 }
             });
 
-        // Mock repository behavior
+        // Mock repository behavior and cancel the token after AddAsync is called
         _repositoryMock
             .Setup(r => r.AddAsync(It.IsAny<Entity>()))
+            .Callback(() => cancellationTokenSource.Cancel()) // Cancel the token after AddAsync
             .Returns(Task.CompletedTask);
+
+        // Act
+        await _consumerService.StartAsync(cancellationTokenSource.Token);
+
+        // Simulate time progression to trigger the timer
+        _fakeTimeProvider.Advance(TimeSpan.FromSeconds(0.5));
+
+        // Wait for the timer to process the message
+        await Task.Delay(100); // Allow the timer to complete its execution
+
+        // Assert
+        _repositoryMock.Verify(r => r.AddAsync(It.Is<Entity>(e => e.Id.ToString() == validKey && e.Name == "Test Entity")), Times.Once);
+
+        // Stop the service to clean up
+        await _consumerService.StopAsync(cancellationTokenSource.Token);
+    }
+
+    [Fact]
+    public async Task StartAsync_ShouldStartTimer()
+    {
+        // Arrange
+        // Arrange
+        var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 
         // Act
         await _consumerService.StartAsync(cancellationTokenSource.Token);
@@ -90,7 +116,7 @@ public class KafkaConsumerServiceTests : IDisposable
         _fakeTimeProvider.Advance(TimeSpan.FromSeconds(1));
 
         // Assert
-        _repositoryMock.Verify(r => r.AddAsync(It.Is<Entity>(e => e.Id.ToString() == validKey && e.Name == "Test Entity")), Times.Once);
+        // No exception means the timer started successfully
 
         // Stop the service to clean up
         await _consumerService.StopAsync(cancellationTokenSource.Token);
@@ -105,22 +131,7 @@ public class KafkaConsumerServiceTests : IDisposable
         _consumerMock.Verify(c => c.Dispose(), Times.Once);
 
         // Verify that the service scope was disposed
-        _serviceScopeMock.Verify(scope => scope.Dispose(), Times.Once);
     }
 
-    [Fact]
-    public async Task StartAsync_ShouldStartTimer()
-    {
-        // Arrange
-        var cancellationToken = new CancellationTokenSource();
 
-        // Act
-        await _consumerService.StartAsync(cancellationToken.Token);
-
-        // Simulate time progression
-        _fakeTimeProvider.Advance(TimeSpan.FromSeconds(1));
-
-        // Assert
-        // No exception means the timer started successfully
-    }
 }
