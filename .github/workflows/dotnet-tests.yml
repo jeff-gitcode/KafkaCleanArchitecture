@@ -38,7 +38,7 @@ jobs:
     # Upload test results (optional)
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.2
       with:
         name: test-results
         path: '**/TestResults/*.trx'
@@ -46,7 +46,7 @@ jobs:
     # Upload code coverage report (optional)
     - name: Upload code coverage
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.2
       with:
         name: code-coverage
         path: '**/coverage.cobertura.xml'
