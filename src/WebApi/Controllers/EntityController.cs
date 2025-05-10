@@ -34,5 +34,21 @@ namespace WebApi.Controllers
             }
             return Ok(entity);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllEntities()
+        {
+            var query = new GetAllEntitiesQuery();
+            var entities = await _mediator.Send(query);
+            return Ok(entities);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteEntity(Guid id)
+        {
+            var command = new DeleteEntityCommand { Id = id };
+            await _mediator.Send(command);
+            return NoContent();
+        }
     }
 }

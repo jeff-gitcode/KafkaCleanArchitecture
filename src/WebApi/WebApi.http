@@ -12,3 +12,11 @@ Accept: application/json
 ### Get Entity by ID
 GET {{WebApi_HostAddress}}/api/entity/b0250602-0464-42ab-b62c-23eac8e850d6
 Accept: application/json
+
+### Get All Entities
+GET {{WebApi_HostAddress}}/api/entity
+Accept: application/json
+
+### Delete Entity by ID
+DELETE {{WebApi_HostAddress}}/api/entity/d3b0b521-7169-477e-8a2b-d4e572b4008d
+Accept: application/json
