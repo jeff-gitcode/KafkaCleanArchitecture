@@ -1,0 +1,52 @@
+name: .NET CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Setup .NET environment
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '9.0.x' # Use the appropriate .NET version
+
+    # Restore dependencies
+    - name: Restore dependencies
+      run: dotnet restore
+
+    # Build the solution
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Debug
+
+    # Run tests
+    - name: Run tests
+      run: dotnet test --no-build --configuration Debug --collect:"XPlat Code Coverage"
+
+    # Upload test results (optional)
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: '**/TestResults/*.trx'
+
+    # Upload code coverage report (optional)
+    - name: Upload code coverage
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-coverage
+        path: '**/coverage.cobertura.xml'
