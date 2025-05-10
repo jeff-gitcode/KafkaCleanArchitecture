@@ -23,6 +23,28 @@ This project is a .NET Core application that implements a clean architecture pat
   - **Domain.Tests**: Tests for domain entities.
   - **Infrastructure.Tests**: Tests for infrastructure components.
 
+## System Architecture
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant WebAPI as Web API
+    participant KafkaBroker as Kafka Broker
+    participant KafkaConsumer as Kafka Consumer
+    participant Domain as Domain Layer
+    participant Database as Database (Optional)
+    participant Certificates as SSL Certificates
+
+    User->>WebAPI: Sends HTTP Request
+    WebAPI->>KafkaBroker: Produces Message
+    KafkaBroker->>KafkaConsumer: Delivers Message
+    KafkaConsumer->>Domain: Processes Message
+    Domain->>Database: Saves Data (Optional)
+    Certificates-->>WebAPI: Secures Communication
+    Certificates-->>KafkaBroker: Secures Communication
+    Certificates-->>KafkaConsumer: Secures Communication
+```
+
 ## Setup Instructions
 
 1. Clone the repository:
@@ -43,23 +65,36 @@ This project is a .NET Core application that implements a clean architecture pat
    - Generate SSL certificates for Kafka:
 ```bash
 mkdir kafka-secrets
-openssl req -new -x509 -keyout kafka-secrets/kafka.key -out kafka-secrets/kafka.crt -days 365 -nodes -subj "//CN=localhost"
+# Generate a Private Key Run the following command to generate a private key:
+openssl genrsa -out kafka-secrets/kafka.key 2048
+# Generate a CSR using the private key:
+openssl req -new -key kafka-secrets/kafka.key -out kafka-secrets/kafka.csr -subj "//CN=localhost"
+
+# Create a self-signed certificate valid for 365 days:
+openssl x509 -req -in kafka-secrets/kafka.csr -signkey kafka-secrets/kafka.key -out kafka-secrets/kafka.crt -days 365
+
+# Convert the private key and certificate into a PKCS#12 keystore:
 openssl pkcs12 -export -in kafka-secrets/kafka.crt -inkey kafka-secrets/kafka.key -out kafka-secrets/kafka.keystore.p12 -name kafka -password pass:kafka123
+# Import the PKCS#12 Keystore into a Java Keystore
+keytool -importkeystore -deststorepass kafka123 -destkeypass kafka123 -destkeystore kafka-secrets/kafka.keystore.jks -srckeystore kafka-secrets/kafka.keystore.p12 -srcstoretype PKCS12 -srcstorepass kafka123 -alias kafka
+# Create a Truststore
 keytool -import -trustcacerts -file kafka-secrets/kafka.crt -alias kafka -keystore kafka-secrets/kafka.truststore.jks -storepass kafka123 -noprompt
+
 ```
 
 4. Start Kafka using Docker Compose: Ensure you have Docker installed, then run:
     ```
-    {
-      "Kafka": {
-        "BootstrapServers": "localhost:9092"
-      }
-    }
+    docker compose down
+    docker compose up -d
+    docker-compose logs kafka
     ```
 5. Run the application:
    ```
    dotnet run --project src/WebApi/WebApi.csproj
    ```
+
+## Kafka SSL Demo
+![Kafka SSL Demo](doc/kafka-ssl-demo.gif)
 
 ## Usage
 
